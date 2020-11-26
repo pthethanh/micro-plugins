@@ -5,6 +5,7 @@ package redis_test
 import (
 	"context"
 	"encoding/json"
+	"os"
 	"testing"
 	"time"
 
@@ -13,6 +14,7 @@ import (
 )
 
 func TestCache(t *testing.T) {
+	os.Setenv("REDIS_ADDRS", "localhost:6379")
 	var m cache.Cacher = redis.New(redis.FromEnv())
 	// string
 	if err := m.Set(context.Background(), "k", []byte("v")); err != nil {

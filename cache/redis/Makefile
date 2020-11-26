@@ -1,4 +1,4 @@
-PROJECT_NAME=nats
+PROJECT_NAME=redis
 GO_BUILD_ENV=CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=on
 GO_FILES=$(shell go list ./... | grep -v /vendor/)
 
