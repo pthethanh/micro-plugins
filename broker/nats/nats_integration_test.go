@@ -21,7 +21,7 @@ func TestBroker(t *testing.T) {
 		nats.Encoder(broker.JSONEncoder{}),
 		nats.Logger(log.Root().Fields("service", "nats")),
 		nats.Options(natsgo.Timeout(2*time.Second)))
-	if err := b.Connect(); err != nil {
+	if err := b.Open(context.Background()); err != nil {
 		t.Fatal(err)
 	}
 	defer b.Close(context.Background())
@@ -31,7 +31,7 @@ func TestBroker(t *testing.T) {
 	}
 	ch := make(chan broker.Event, 1)
 	// 2 subscribers on the same queue should get 1 message.
-	sub, err := b.Subscribe("test", func(msg broker.Event) error {
+	sub, err := b.Subscribe(context.Background(), "test", func(msg broker.Event) error {
 		ch <- msg
 		return nil
 	}, broker.Queue("q0"))
@@ -39,7 +39,7 @@ func TestBroker(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer sub.Unsubscribe()
-	sub1, err := b.Subscribe("test", func(msg broker.Event) error {
+	sub1, err := b.Subscribe(context.Background(), "test", func(msg broker.Event) error {
 		ch <- msg
 		return nil
 	}, broker.Queue("q0"))
@@ -48,7 +48,7 @@ func TestBroker(t *testing.T) {
 	}
 	defer sub1.Unsubscribe()
 	// another subscriber on another queue
-	sub2, err := b.Subscribe("test", func(msg broker.Event) error {
+	sub2, err := b.Subscribe(context.Background(), "test", func(msg broker.Event) error {
 		ch <- msg
 		return nil
 	}, broker.Queue("q1"))
@@ -57,7 +57,7 @@ func TestBroker(t *testing.T) {
 	}
 	defer sub2.Unsubscribe()
 	// another subscriber without queue
-	sub3, err := b.Subscribe("test", func(msg broker.Event) error {
+	sub3, err := b.Subscribe(context.Background(), "test", func(msg broker.Event) error {
 		ch <- msg
 		return nil
 	})
@@ -70,7 +70,7 @@ func TestBroker(t *testing.T) {
 		Age:  22,
 	}
 	m := mustNewMessage(json.Marshal, want, map[string]string{"type": "person"})
-	if err := b.Publish("test", m); err != nil {
+	if err := b.Publish(context.Background(), "test", m); err != nil {
 		t.Fatal(err)
 	}
 	// expect to got 3 messages as we have 2 subscribers on 2 different queues, 1 without queue.
@@ -99,7 +99,7 @@ func TestBrokerHealthCheck(t *testing.T) {
 		nats.Encoder(broker.JSONEncoder{}),
 		nats.Logger(log.Root().Fields("service", "nats")),
 		nats.Options(natsgo.Timeout(2*time.Second)))
-	if err := b.Connect(); err != nil {
+	if err := b.Open(context.Background()); err != nil {
 		t.Fatal(err)
 	}
 	defer b.Close(context.Background())

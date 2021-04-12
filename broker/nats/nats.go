@@ -29,6 +29,10 @@ type (
 	Option func(*Nats)
 )
 
+var (
+	_ broker.Broker = &Nats{}
+)
+
 // New return a new NATs message broker.
 // If address is not set, default address "nats:4222" will be used.
 func New(opts ...Option) *Nats {
@@ -47,19 +51,19 @@ func New(opts ...Option) *Nats {
 }
 
 // Connect connect to target server.
-func (n *Nats) Connect() error {
+func (n *Nats) Open(ctx context.Context) error {
 	n.log.Infof("nats: connecting to %s", n.addrs)
 	conn, err := nats.Connect(n.addrs, n.opts...)
 	if err != nil {
 		return err
 	}
 	n.conn = conn
-	n.log.Infof("nats: connected to %s successfully", n.addrs)
+	n.log.Context(ctx).Infof("nats: connected to %s successfully", n.addrs)
 	return nil
 }
 
 // Publish implements broker.Broker interface.
-func (n *Nats) Publish(topic string, m *broker.Message, opts ...broker.PublishOption) error {
+func (n *Nats) Publish(ctx context.Context, topic string, m *broker.Message, opts ...broker.PublishOption) error {
 	if n.encoder == nil {
 		return ErrMissingEncoder
 	}
@@ -71,7 +75,7 @@ func (n *Nats) Publish(topic string, m *broker.Message, opts ...broker.PublishOp
 }
 
 // Subscribe implements broker.Broker interface.
-func (n *Nats) Subscribe(topic string, h broker.Handler, opts ...broker.SubscribeOption) (broker.Subscriber, error) {
+func (n *Nats) Subscribe(ctx context.Context, topic string, h broker.Handler, opts ...broker.SubscribeOption) (broker.Subscriber, error) {
 	if n.encoder == nil {
 		return nil, ErrMissingEncoder
 	}
@@ -82,7 +86,7 @@ func (n *Nats) Subscribe(topic string, h broker.Handler, opts ...broker.Subscrib
 	msgHandler := func(msg *nats.Msg) {
 		m := broker.Message{}
 		if err := n.encoder.Decode(msg.Data, &m); err != nil {
-			n.log.Errorf("nats: subscribe: decode failed, err: %v", err)
+			n.log.Context(ctx).Errorf("nats: subscribe: decode failed, err: %v", err)
 			return
 		}
 		h(&event{
