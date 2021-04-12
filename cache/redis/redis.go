@@ -19,7 +19,7 @@ var (
 	_ cache.Cacher = &Redis{}
 )
 
-// New return a cacher using Redis.
+// New return a new cacher using Redis.
 func New(opts ...Option) *Redis {
 	r := &Redis{
 		opts: &redis.UniversalOptions{},
@@ -27,8 +27,13 @@ func New(opts ...Option) *Redis {
 	for _, op := range opts {
 		op(r)
 	}
-	r.conn = redis.NewUniversalClient(r.opts)
 	return r
+}
+
+// Open open connection to the target servers.
+func (r *Redis) Open(ctx context.Context) error {
+	r.conn = redis.NewUniversalClient(r.opts)
+	return nil
 }
 
 // Get a value, return cache.ErrNotFound if key not found.
@@ -59,4 +64,13 @@ func (r *Redis) Delete(ctx context.Context, key string) error {
 		return cmd.Err()
 	}
 	return nil
+}
+
+// Close flush and close the underlying connection.
+func (r *Redis) Close(ctx context.Context) error {
+	rs := r.conn.FlushAll(ctx)
+	if err := rs.Err(); err != nil {
+		return err
+	}
+	return r.conn.Close()
 }

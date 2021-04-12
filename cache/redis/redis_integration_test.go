@@ -16,6 +16,10 @@ import (
 func TestCache(t *testing.T) {
 	os.Setenv("REDIS_ADDRS", "localhost:6379")
 	var m cache.Cacher = redis.New(redis.FromEnv())
+	if err := m.Open(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	defer m.Close(context.Background())
 	// string
 	if err := m.Set(context.Background(), "k", []byte("v")); err != nil {
 		t.Fatal(err)
@@ -58,6 +62,10 @@ func TestCache(t *testing.T) {
 
 func TestCacheTimeout(t *testing.T) {
 	var m cache.Cacher = redis.New(redis.FromEnv())
+	if err := m.Open(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	defer m.Close(context.Background())
 	// not ok
 	if err := m.Set(context.Background(), "k2", []byte("v"), cache.TTL(500*time.Millisecond)); err != nil {
 		t.Fatal(err)
@@ -79,6 +87,10 @@ func TestCacheTimeout(t *testing.T) {
 
 func TestCacheDelete(t *testing.T) {
 	var m cache.Cacher = redis.New(redis.FromEnv())
+	if err := m.Open(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	defer m.Close(context.Background())
 	if err := m.Set(context.Background(), "k3", []byte("v")); err != nil {
 		t.Fatal(err)
 	}
